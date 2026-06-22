@@ -1,0 +1,1431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Advanced Subnet Calculator + CIDR Planner + Networking Tutorials</title>
+<style>
+  :root {
+    --bg: #f3f6fb;
+    --card: #fff;
+    --accent: #0b6df0;
+    --muted: #6b7280;
+    --sidebar: #2c3e50;
+    --sidebar-hover: #34495e;
+    --sidebar-active: #3498db;
+  }
+  
+  body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    margin: 0;
+    background: var(--bg);
+    color: #0f1724;
+    display: flex;
+    min-height: 100vh;
+  }
+  
+  /* Sidebar Navigation */
+  .sidebar {
+    width: 280px;
+    background: var(--sidebar);
+    color: white;
+    overflow-y: auto;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+  
+  .sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .sidebar h2 {
+    margin: 0;
+    font-size: 18px;
+  }
+  
+  .sidebar-nav {
+    padding: 10px 0;
+  }
+  
+  .nav-section {
+    margin-bottom: 15px;
+  }
+  
+  .nav-section-title {
+    padding: 8px 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #bdc3c7;
+    font-weight: 600;
+  }
+  
+  .nav-item {
+    padding: 10px 20px 10px 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+  }
+  
+  .nav-item:hover {
+    background: var(--sidebar-hover);
+  }
+  
+  .nav-item.active {
+    background: var(--sidebar-hover);
+    border-left-color: var(--sidebar-active);
+    color: var(--sidebar-active);
+  }
+  
+  .nav-item i {
+    margin-right: 8px;
+    width: 16px;
+    text-align: center;
+  }
+  
+  /* Main Content */
+  .main-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  
+  .card {
+    background: var(--card);
+    padding: 14px;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(12,20,36,0.06);
+    margin-bottom: 12px;
+  }
+  
+  h1 { margin: 0; font-size: 20px; }
+  h2 { margin: 0 0 10px 0; font-size: 18px; }
+  h3 { margin: 10px 0; font-size: 16px; }
+  h4 { margin: 8px 0; font-size: 14px; }
+  
+  label {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  
+  input, select, button, textarea {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    border: 1px solid #e6edf3;
+    font-size: 14px;
+  }
+  
+  .row { display: flex; gap: 8px; }
+  .col { flex: 1; }
+  
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  button.ghost {
+    background: #fff;
+    border: 1px solid #e6edf3;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  
+  .results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  .stat {
+    background: #fbfdff;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #eef6ff;
+  }
+  
+  pre {
+    background: #0b1220;
+    color: #e6f1ff;
+    padding: 10px;
+    border-radius: 8px;
+    overflow: auto;
+  }
+  
+  #plannerList {
+    max-height: 220px;
+    overflow: auto;
+    border: 1px solid #eef6ff;
+    padding: 8px;
+    border-radius: 6px;
+    background: #fff;
+  }
+  
+  .modal {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+  }
+  
+  .modal .box {
+    background: #fff;
+    padding: 16px;
+    border-radius: 8px;
+    max-width: 760px;
+    width: 96%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .flex { display: flex; gap: 8px; }
+  .small { font-size: 13px; color: var(--muted); }
+  
+  /* Content Sections */
+  .content-section {
+    display: none;
+  }
+  
+  .content-section.active {
+    display: block;
+  }
+  
+  /* Network Diagram Styles */
+  .network-diagram {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    border: 1px solid #e6edf3;
+  }
+  
+  .diagram-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin: 15px 0;
+  }
+  
+  .diagram-box {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    min-width: 140px;
+    transition: transform 0.2s;
+  }
+  
+  .diagram-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  
+  .diagram-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  
+  .diagram-value {
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  
+  /* Tutorial Content Styles */
+  .tutorial-content {
+    line-height: 1.6;
+  }
+  
+  .tutorial-content h3 {
+    margin-top: 20px;
+    color: var(--sidebar);
+    border-bottom: 1px solid #e6edf3;
+    padding-bottom: 5px;
+  }
+  
+  .tutorial-content ul, .tutorial-content ol {
+    padding-left: 20px;
+  }
+  
+  .tutorial-content li {
+    margin-bottom: 8px;
+  }
+  
+  .info-box {
+    background: #e1f0fa;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 10px 0;
+  }
+  
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+  
+  .comparison-table th, .comparison-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .comparison-table th {
+    background-color: #f2f2f2;
+  }
+  
+  @media (max-width: 800px) {
+    .row { flex-direction: column; }
+    body { flex-direction: column; }
+    .sidebar { width: 100%; height: auto; position: relative; }
+    .main-content { padding: 10px; }
+  }
+</style>
+</head>
+<body>
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Networking Toolkit</h2>
+      <div class="small">Complete IP and Network Resource</div>
+    </div>
+    
+    <div class="sidebar-nav">
+      <!-- Calculator Section -->
+      <div class="nav-section">
+        <div class="nav-section-title">Calculator Tools</div>
+        <div class="nav-item active" data-section="subnet-calculator">
+          <i>📐</i> Subnet Calculator
+        </div>
+        <div class="nav-item" data-section="cidr-planner">
+          <i>📊</i> CIDR Planner
+        </div>
+        <div class="nav-item" data-section="worksheet-generator">
+          <i>📝</i> Worksheet Generator
+        </div>
+      </div>
+      
+      <!-- IP Addressing Tutorials -->
+      <div class="nav-section">
+        <div class="nav-section-title">IP Addressing</div>
+        <div class="nav-item" data-section="ip-basics">
+          <i>🔢</i> IP Addressing Basics
+        </div>
+        <div class="nav-item" data-section="ip-classes">
+          <i>🏷️</i> IP Address Classes
+        </div>
+        <div class="nav-item" data-section="cidr-tutorial">
+          <i>🔧</i> CIDR Notation
+        </div>
+      </div>
+      
+      <!-- Network Security -->
+      <div class="nav-section">
+        <div class="nav-section-title">Network Security</div>
+        <div class="nav-item" data-section="firewalls">
+          <i>🔥</i> Firewalls
+        </div>
+        <div class="nav-item" data-section="ids-ips">
+          <i>🛡️</i> IDS & IPS
+        </div>
+        <div class="nav-item" data-section="vpn-tutorial">
+          <i>🔒</i> VPN Technology
+        </div>
+      </div>
+      
+      <!-- Network Infrastructure -->
+      <div class="nav-section">
+        <div class="nav-section-title">Infrastructure</div>
+        <div class="nav-item" data-section="routers">
+          <i>🔄</i> Routers
+        </div>
+        <div class="nav-item" data-section="switches">
+          <i>🔀</i> Switches
+        </div>
+        <div class="nav-item" data-section="vlans">
+          <i>🏷️</i> VLANs
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <div class="container">
+      <!-- Subnet Calculator Section -->
+      <div id="subnet-calculator" class="content-section active">
+        <div class="card">
+          <h1>Advanced Subnet Calculator</h1>
+          <p class="small">Calculate network parameters, subnet divisions, and visualize network structure</p>
+        </div>
+
+        <div class="card">
+          <label>IP Version</label>
+          <select id="ipVersion"><option value="ipv4">IPv4</option><option value="ipv6">IPv6</option></select>
+          
+          <label>IP Address</label>
+          <input id="ipInput" value="192.168.10.5" />
+          
+          <label>Mask / Prefix</label>
+          <input id="maskInput" value="/24" />
+          
+          <div class="controls">
+            <button class="primary" id="calcBtn">Calculate</button>
+            <button class="ghost" id="copyBtn">Copy</button>
+            <button class="ghost" id="csvBtn">Export CSV</button>
+            <button class="ghost" id="pdfBtn">Export PDF</button>
+          </div>
+          
+          <div id="error" class="small" style="color:#c0262e"></div>
+          
+          <h3 style="margin-top:10px">Results</h3>
+          <div class="results" id="statsArea"></div>
+          
+          <h4 style="margin-top:8px">Raw Output</h4>
+          <pre id="rawOutput">No calculation yet.</pre>
+        </div>
+
+        <!-- Subnet Division Results -->
+        <div class="card" id="subnet-division-results" style="display: none;">
+          <h3>Subnet Division Results</h3>
+          <div id="division-stats"></div>
+          <div class="subnet-grid" id="subnet-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 15px;"></div>
+        </div>
+
+        <!-- Network Diagram -->
+        <div class="card" id="network-diagram" style="display: none;">
+          <h3>Network Diagram</h3>
+          <div class="network-diagram">
+            <div class="diagram-container" id="diagram-container">
+              <!-- Diagram will be generated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CIDR Planner Section -->
+      <div id="cidr-planner" class="content-section">
+        <div class="card">
+          <h1>CIDR Planner (IPv4 only)</h1>
+          <p class="small">Split a network into <strong>N equal subnets</strong>. Enter network and prefix.</p>
+          <div class="row">
+            <div class="col">
+              <label>Network (e.g. 10.0.0.0)</label>
+              <input id="planNetwork" value="10.0.0.0" />
+            </div>
+            <div style="width:140px">
+              <label>Prefix (e.g. /16)</label>
+              <input id="planPrefix" value="/16" />
+            </div>
+            <div style="width:140px">
+              <label># Subnets</label>
+              <input id="planCount" value="10" />
+            </div>
+            <div style="width:140px">
+              <label></label>
+              <button class="primary" id="planBtn">Plan</button>
+            </div>
+          </div>
+          <div id="plannerList" style="margin-top:8px">No plan yet.</div>
+          <div style="margin-top:8px">
+            <button class="ghost" id="exportPlanCSV">Export Plan CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Worksheet Generator Section -->
+      <div id="worksheet-generator" class="content-section">
+        <div class="card">
+          <h1>Worksheet Generator (Printable)</h1>
+          <p class="small">Generate a PDF/printable worksheet with auto-created subnetting questions (with or without answers).</p>
+          <label>Number of questions</label>
+          <input id="wsCount" value="10" />
+          <label>Question type</label>
+          <select id="wsType">
+            <option value="find_network">Given IP/prefix — find network/broadcast/hosts</option>
+            <option value="create_subnets">Given network — split into N subnets</option>
+          </select>
+          <div class="controls" style="margin-top:8px">
+            <button class="primary" id="genWorksheet">Generate Worksheet</button>
+            <button class="ghost" id="genWorksheetWithAnswers">Generate with Answers</button>
+          </div>
+          <div id="worksheetArea" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <!-- IP Basics Tutorial -->
+      <div id="ip-basics" class="content-section">
+        <div class="card tutorial-content">
+          <h1>IP Addressing Basics</h1>
+          <p>IP (Internet Protocol) addresses are numerical labels assigned to devices connected to a network that uses the Internet Protocol for communication.</p>
+          
+          <h3>IPv4 vs IPv6</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>Feature</th>
+                <th>IPv4</th>
+                <th>IPv6</th>
+              </tr>
+              <tr>
+                <td>Address Size</td>
+                <td>32 bits</td>
+                <td>128 bits</td>
+              </tr>
+              <tr>
+                <td>Address Format</td>
+                <td>192.168.1.1</td>
+                <td>2001:0db8:85a3:0000:0000:8a2e:0370:7334</td>
+              </tr>
+              <tr>
+                <td>Available Addresses</td>
+                <td>~4.3 billion</td>
+                <td>~3.4×10³⁸</td>
+              </tr>
+              <tr>
+                <td>Header Size</td>
+                <td>20-60 bytes</td>
+                <td>40 bytes fixed</td>
+              </tr>
+            </table>
+          </div>
+          
+          <h3>Network Components</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Internet</div>
+                <div class="diagram-value">ISP Router</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Firewall</div>
+                <div class="diagram-value">Security Gateway</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">Core Switch</div>
+                <div class="diagram-value">Network Distribution</div>
+              </div>
+              <div class="diagram-box" style="border-color: #f39c12;">
+                <div class="diagram-label">End Devices</div>
+                <div class="diagram-value">PCs, Servers</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>Key Concepts</h3>
+          <ul>
+            <li><strong>Network Address:</strong> Identifies the network itself</li>
+            <li><strong>Broadcast Address:</strong> Sends to all hosts on network</li>
+            <li><strong>Subnet Mask:</strong> Distinguishes network and host portions</li>
+            <li><strong>Gateway:</strong> Exit point from the network</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- IP Classes Tutorial -->
+      <div id="ip-classes" class="content-section">
+        <div class="card tutorial-content">
+          <h1>IP Address Classes</h1>
+          <p>IPv4 addresses are divided into classes to accommodate networks of different sizes.</p>
+          
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Class A</div>
+                <div class="diagram-value">1.0.0.0 - 126.255.255.255</div>
+                <div class="small">Large Networks</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Class B</div>
+                <div class="diagram-value">128.0.0.0 - 191.255.255.255</div>
+                <div class="small">Medium Networks</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">Class C</div>
+                <div class="diagram-value">192.0.0.0 - 223.255.255.255</div>
+                <div class="small">Small Networks</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>Class Characteristics</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>Class</th>
+                <th>First Octet</th>
+                <th>Network Bits</th>
+                <th>Host Bits</th>
+                <th>Networks</th>
+                <th>Hosts per Network</th>
+              </tr>
+              <tr>
+                <td>A</td>
+                <td>1-126</td>
+                <td>8</td>
+                <td>24</td>
+                <td>126</td>
+                <td>16,777,214</td>
+              </tr>
+              <tr>
+                <td>B</td>
+                <td>128-191</td>
+                <td>16</td>
+                <td>16</td>
+                <td>16,384</td>
+                <td>65,534</td>
+              </tr>
+              <tr>
+                <td>C</td>
+                <td>192-223</td>
+                <td>24</td>
+                <td>8</td>
+                <td>2,097,152</td>
+                <td>254</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CIDR Tutorial -->
+      <div id="cidr-tutorial" class="content-section">
+        <div class="card tutorial-content">
+          <h1>CIDR Notation Tutorial</h1>
+          <p>CIDR (Classless Inter-Domain Routing) notation is a method for allocating IP addresses and IP routing that replaces the older classful network architecture.</p>
+          
+          <h3>CIDR vs Classful Addressing</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Classful</div>
+                <div class="diagram-value">Fixed Classes</div>
+                <div class="small">A, B, C, D, E</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">CIDR</div>
+                <div class="diagram-value">Flexible Mask</div>
+                <div class="small">/8 to /32</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>CIDR Benefits</h3>
+          <ul>
+            <li><strong>Efficient Allocation:</strong> No wasted IP space</li>
+            <li><strong>Flexible Subnetting:</strong> Any prefix length</li>
+            <li><strong>Route Aggregation:</strong> Reduces routing table size</li>
+            <li><strong>Modern Standard:</strong> Used in all modern networks</li>
+          </ul>
+          
+          <h3>Common CIDR Examples</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>CIDR</th>
+                <th>Subnet Mask</th>
+                <th>Usable Hosts</th>
+                <th>Use Case</th>
+              </tr>
+              <tr>
+                <td>/24</td>
+                <td>255.255.255.0</td>
+                <td>254</td>
+                <td>Small Business</td>
+              </tr>
+              <tr>
+                <td>/26</td>
+                <td>255.255.255.192</td>
+                <td>62</td>
+                <td>Department</td>
+              </tr>
+              <tr>
+                <td>/30</td>
+                <td>255.255.255.252</td>
+                <td>2</td>
+                <td>Point-to-Point</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Firewalls Tutorial -->
+      <div id="firewalls" class="content-section">
+        <div class="card tutorial-content">
+          <h1>Firewalls - Network Security</h1>
+          <p>Firewalls are network security systems that monitor and control incoming and outgoing network traffic based on predetermined security rules.</p>
+          
+          <h3>Types of Firewalls</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Packet Filtering</div>
+                <div class="diagram-value">Stateless</div>
+                <div class="small">Basic filtering</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Stateful</div>
+                <div class="diagram-value">Connection Tracking</div>
+                <div class="small">Modern standard</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">Next-Generation</div>
+                <div class="diagram-value">Application Aware</div>
+                <div class="small">Deep inspection</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>Firewall Deployment</h3>
+          <div class="info-box">
+            <strong>Network Layout:</strong> Internet → Firewall → Internal Network
+          </div>
+          
+          <h3>Common Use Cases</h3>
+          <ul>
+            <li><strong>Enterprise Networks:</strong> Protect internal resources from external threats</li>
+            <li><strong>DMZ Setup:</strong> Isolate public-facing servers</li>
+            <li><strong>Remote Access:</strong> Secure VPN connections</li>
+            <li><strong>Compliance:</strong> Meet regulatory requirements</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- IDS/IPS Tutorial -->
+      <div id="ids-ips" class="content-section">
+        <div class="card tutorial-content">
+          <h1>IDS & IPS - Intrusion Detection & Prevention</h1>
+          <p>IDS (Intrusion Detection Systems) and IPS (Intrusion Prevention Systems) monitor network traffic for suspicious activity and policy violations.</p>
+          
+          <h3>IDS vs IPS Comparison</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>Feature</th>
+                <th>IDS</th>
+                <th>IPS</th>
+              </tr>
+              <tr>
+                <td>Primary Function</td>
+                <td>Detection & Alerting</td>
+                <td>Detection & Prevention</td>
+              </tr>
+              <tr>
+                <td>Network Position</td>
+                <td>Out-of-band</td>
+                <td>In-line</td>
+              </tr>
+              <tr>
+                <td>Response</td>
+                <td>Passive</td>
+                <td>Active</td>
+              </tr>
+              <tr>
+                <td>Impact on Traffic</td>
+                <td>None</td>
+                <td>Can block/drop packets</td>
+              </tr>
+            </table>
+          </div>
+          
+          <h3>Deployment Architecture</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Internet</div>
+                <div class="diagram-value">External Network</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Firewall</div>
+                <div class="diagram-value">Traffic Filter</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">IPS</div>
+                <div class="diagram-value">Active Protection</div>
+              </div>
+              <div class="diagram-box" style="border-color: #f39c12;">
+                <div class="diagram-label">Internal Network</div>
+                <div class="diagram-value">Protected Assets</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>Detection Methods</h3>
+          <ul>
+            <li><strong>Signature-based:</strong> Known attack patterns</li>
+            <li><strong>Anomaly-based:</strong> Behavioral analysis</li>
+            <li><strong>Policy-based:</strong> Rule violations</li>
+            <li><strong>Heuristic:</strong> Machine learning patterns</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- VPN Tutorial -->
+      <div id="vpn-tutorial" class="content-section">
+        <div class="card tutorial-content">
+          <h1>VPN Technology - Virtual Private Networks</h1>
+          <p>VPNs create secure, encrypted connections over public networks, enabling remote access and site-to-site connectivity.</p>
+          
+          <h3>VPN Types</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Site-to-Site</div>
+                <div class="diagram-value">Office Connections</div>
+                <div class="small">LAN to LAN</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Remote Access</div>
+                <div class="diagram-value">Individual Users</div>
+                <div class="small">Client to Network</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">SSL VPN</div>
+                <div class="diagram-value">Web-based Access</div>
+                <div class="small">No client software</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>VPN Protocols</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>Protocol</th>
+                <th>Security</th>
+                <th>Speed</th>
+                <th>Use Case</th>
+              </tr>
+              <tr>
+                <td>IPSec</td>
+                <td>High</td>
+                <td>Medium</td>
+                <td>Site-to-Site</td>
+              </tr>
+              <tr>
+                <td>OpenVPN</td>
+                <td>High</td>
+                <td>Medium</td>
+                <td>Remote Access</td>
+              </tr>
+              <tr>
+                <td>WireGuard</td>
+                <td>High</td>
+                <td>Fast</td>
+                <td>Modern deployments</td>
+              </tr>
+            </table>
+          </div>
+          
+          <h3>Key Benefits</h3>
+          <ul>
+            <li><strong>Security:</strong> Encrypted data transmission</li>
+            <li><strong>Privacy:</strong> Hide IP address and location</li>
+            <li><strong>Access Control:</strong> Secure remote access to resources</li>
+            <li><strong>Cost Effective:</strong> Leverage existing internet connections</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Routers Tutorial -->
+      <div id="routers" class="content-section">
+        <div class="card tutorial-content">
+          <h1>Routers - Network Routing</h1>
+          <p>Routers are networking devices that forward data packets between computer networks, connecting multiple networks together.</p>
+          
+          <h3>Router Functions</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Path Selection</div>
+                <div class="diagram-value">Routing Decisions</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Packet Forwarding</div>
+                <div class="diagram-value">Data Transmission</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">Network Address Translation</div>
+                <div class="diagram-value">NAT/PAT</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>Routing Protocols</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>Protocol</th>
+                <th>Type</th>
+                <th>Use Case</th>
+                <th>Examples</th>
+              </tr>
+              <tr>
+                <td>OSPF</td>
+                <td>Link-State</td>
+                <td>Enterprise Networks</td>
+                <td>Large organizations</td>
+              </tr>
+              <tr>
+                <td>BGP</td>
+                <td>Path Vector</td>
+                <td>Internet Routing</td>
+                <td>ISPs, Large networks</td>
+              </tr>
+              <tr>
+                <td>EIGRP</td>
+                <td>Hybrid</td>
+                <td>Cisco Networks</td>
+                <td>Cisco environments</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Switches Tutorial -->
+      <div id="switches" class="content-section">
+        <div class="card tutorial-content">
+          <h1>Network Switches</h1>
+          <p>Switches are networking devices that connect devices on a computer network by using packet switching to receive and forward data to the destination device.</p>
+          
+          <h3>Switch Types</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Unmanaged</div>
+                <div class="diagram-value">Plug & Play</div>
+                <div class="small">Home/Small Office</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Managed</div>
+                <div class="diagram-value">Full Control</div>
+                <div class="small">Enterprise</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">Layer 3</div>
+                <div class="diagram-value">Routing Capable</div>
+                <div class="small">Advanced networks</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>Switch vs Hub vs Router</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>Device</th>
+                <th>OSI Layer</th>
+                <th>Intelligence</th>
+                <th>Use Case</th>
+              </tr>
+              <tr>
+                <td>Hub</td>
+                <td>Layer 1</td>
+                <td>None</td>
+                <td>Legacy networks</td>
+              </tr>
+              <tr>
+                <td>Switch</td>
+                <td>Layer 2</td>
+                <td>MAC address based</td>
+                <td>Local network</td>
+              </tr>
+              <tr>
+                <td>Router</td>
+                <td>Layer 3</td>
+                <td>IP address based</td>
+                <td>Between networks</td>
+              </tr>
+            </table>
+          </div>
+          
+          <h3>Key Features</h3>
+          <ul>
+            <li><strong>MAC Address Learning:</strong> Builds forwarding table</li>
+            <li><strong>VLAN Support:</strong> Network segmentation</li>
+            <li><strong>Quality of Service:</strong> Traffic prioritization</li>
+            <li><strong>Port Security:</strong> Access control</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- VLANs Tutorial -->
+      <div id="vlans" class="content-section">
+        <div class="card tutorial-content">
+          <h1>VLANs - Virtual Local Area Networks</h1>
+          <p>VLANs (Virtual Local Area Networks) allow network administrators to logically segment a physical network into multiple broadcast domains.</p>
+          
+          <h3>VLAN Benefits</h3>
+          <div class="network-diagram">
+            <div class="diagram-container">
+              <div class="diagram-box" style="border-color: #3498db;">
+                <div class="diagram-label">Security</div>
+                <div class="diagram-value">Isolate traffic</div>
+              </div>
+              <div class="diagram-box" style="border-color: #2ecc71;">
+                <div class="diagram-label">Performance</div>
+                <div class="diagram-value">Reduce broadcast</div>
+              </div>
+              <div class="diagram-box" style="border-color: #e74c3c;">
+                <div class="diagram-label">Flexibility</div>
+                <div class="diagram-value">Logical grouping</div>
+              </div>
+            </div>
+          </div>
+          
+          <h3>VLAN Types</h3>
+          <div class="comparison-table">
+            <table>
+              <tr>
+                <th>VLAN Type</th>
+                <th>Configuration</th>
+                <th>Use Case</th>
+              </tr>
+              <tr>
+                <td>Port-based</td>
+                <td>Static assignment</td>
+                <td>General purpose</td>
+              </tr>
+              <tr>
+                <td>MAC-based</td>
+                <td>Dynamic by MAC</td>
+                <td>Mobile devices</td>
+              </tr>
+              <tr>
+                <td>Protocol-based</td>
+                <td>By protocol type</td>
+                <td>Specialized networks</td>
+              </tr>
+            </table>
+          </div>
+          
+          <h3>Common VLAN Architecture</h3>
+          <div class="info-box">
+            <strong>Typical Enterprise Setup:</strong><br>
+            VLAN 10: Management (192.168.10.0/24)<br>
+            VLAN 20: Staff (192.168.20.0/24)<br>
+            VLAN 30: Guests (192.168.30.0/24)<br>
+            VLAN 40: Servers (192.168.40.0/24)
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial Modal -->
+      <div class="modal" id="tutorialModal">
+        <div class="box">
+          <h2>Tutorial — IP Addressing & Subnetting Steps</h2>
+          <ol>
+            <li>Understand IP structure: network + host bits determined by mask/prefix.</li>
+            <li>Convert dotted mask to prefix or vice versa if needed.</li>
+            <li>Calculate network: IP & mask (bitwise AND).</li>
+            <li>Calculate broadcast: network | wildcard (invert mask).</li>
+            <li>First usable = network+1 (unless /31 or /32). Last usable = broadcast-1.</li>
+            <li>For planning subnets, borrow bits from host portion: newPrefix = oldPrefix + bitsBorrowed.</li>
+          </ol>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="primary" id="closeTutorial">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// Navigation functionality
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    // Remove active class from all items
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    // Add active class to clicked item
+    this.classList.add('active');
+    // Hide all content sections
+    document.querySelectorAll('.content-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    // Show selected section
+    const sectionId = this.getAttribute('data-section');
+    document.getElementById(sectionId).classList.add('active');
+  });
+});
+
+/* Minimal IPv4 helpers */
+function ipv4ToInt(ip) {
+  const parts = ip.trim().split('.');
+  if (parts.length !== 4) return null;
+  let n = 0;
+  for (let i=0;i<4;i++){ const p = Number(parts[i]); if (!Number.isInteger(p) || p<0 || p>255) return null; n = (n<<8)|p; }
+  return n >>> 0;
+}
+function intToIpv4(n) { return [(n>>>24)&255, (n>>>16)&255, (n>>>8)&255, n&255].join('.'); }
+function maskToPrefix(maskStr) {
+  maskStr = maskStr.trim();
+  if (maskStr.startsWith('/')) { const v=Number(maskStr.slice(1)); if(!Number.isInteger(v)||v<0||v>32) return null; return v; }
+  const mi = ipv4ToInt(maskStr); if (mi===null) return null;
+  let cnt=0; for (let i=31;i>=0;i--){ if ((mi & (1<<i))!==0) cnt++; else break; }
+  const expected = cnt===0?0:(~0<< (32-cnt))>>>0; if (mi!==expected) return null; return cnt;
+}
+function prefixToMask(prefix){ return prefix===0?0:(~0 << (32-prefix))>>>0; }
+function wildcard(mask){ return (~mask)>>>0; }
+function usableHosts(prefix){ if (prefix===31) return 2; if (prefix===32) return 1; return Math.max(0, Math.pow(2,32-prefix)-2); }
+
+let lastResult = null;
+document.getElementById('calcBtn').addEventListener('click', ()=> {
+  const ver = document.getElementById('ipVersion').value;
+  const ip = document.getElementById('ipInput').value.trim();
+  const mask = document.getElementById('maskInput').value.trim();
+  document.getElementById('error').textContent='';
+  if (ver==='ipv4') {
+    const ipInt = ipv4ToInt(ip); if (ipInt===null){ document.getElementById('error').textContent='Invalid IPv4'; return; }
+    const prefix = maskToPrefix(mask); if (prefix===null){ document.getElementById('error').textContent='Invalid mask/prefix'; return; }
+    const maskInt = prefixToMask(prefix);
+    const wild = wildcard(maskInt);
+    const network = (ipInt & maskInt) >>> 0;
+    const broadcast = (network | wild) >>> 0;
+    let first, last;
+    if (prefix===32){ first=last=ipInt; } else if (prefix===31){ first=network; last=broadcast; } else { first = (network+1)>>>0; last=(broadcast-1)>>>0; }
+    const usable = usableHosts(prefix);
+    // display
+    const stats = [
+      ['IP', ip],
+      ['Prefix', '/'+prefix],
+      ['Mask', intToIpv4(maskInt)],
+      ['Network', intToIpv4(network)],
+      ['Broadcast', intToIpv4(broadcast)],
+      ['First Host', intToIpv4(first)],
+      ['Last Host', intToIpv4(last)],
+      ['Usable Hosts', String(usable)]
+    ];
+    const statsArea = document.getElementById('statsArea'); statsArea.innerHTML='';
+    stats.forEach(s=> { const d = document.createElement('div'); d.className='stat'; d.innerHTML = '<h4>'+s[0]+'</h4><p>'+s[1]+'</p>'; statsArea.appendChild(d); });
+    const raw = ['IPv4 calculation','IP: '+ip,'Prefix: /'+prefix,'Mask: '+intToIpv4(maskInt),'Network: '+intToIpv4(network),'Broadcast: '+intToIpv4(broadcast),'First: '+intToIpv4(first),'Last: '+intToIpv4(last),'Usable: '+usable].join('\n');
+    document.getElementById('rawOutput').textContent = raw;
+    lastResult = {version:'ipv4', ip, prefix, mask:intToIpv4(maskInt), network:intToIpv4(network), broadcast:intToIpv4(broadcast), first:intToIpv4(first), last:intToIpv4(last), usable};
+    
+    // Show subnet division and network diagram for IPv4
+    document.getElementById('subnet-division-results').style.display = 'block';
+    document.getElementById('network-diagram').style.display = 'block';
+    updateSubnetDivision(ip, prefix);
+    updateNetworkDiagram(ip, prefix);
+  } else {
+    // Simple IPv6 validation and network calc using BigInt (limited)
+    try {
+      const ipBig = ipv6ToBigInt(ip);
+      if (ipBig===null) { document.getElementById('error').textContent='Invalid IPv6'; return; }
+      const prefix = parseIPv6Prefix(mask);
+      if (prefix===null) { document.getElementById('error').textContent='Invalid IPv6 prefix (use /N)'; return; }
+      const maskBig = prefixToMaskBigInt(prefix);
+      const network = (ipBig & maskBig);
+      const total = (1n << BigInt(128-prefix));
+      const last = network + (total - 1n);
+      const first = prefix===128 ? network : network + 1n;
+      document.getElementById('statsArea').innerHTML='';
+      const addStat = (k,v) => { const d=document.createElement('div'); d.className='stat'; d.innerHTML='<h4>'+k+'</h4><p>'+v+'</p>'; document.getElementById('statsArea').appendChild(d); }
+      addStat('IP', ip); addStat('Network', bigIntToIPv6(network)); addStat('Prefix', '/'+prefix); addStat('First', bigIntToIPv6(first)); addStat('Last', bigIntToIPv6(last));
+      document.getElementById('rawOutput').textContent = ['IPv6 calculation','IP: '+ip,'Prefix: /'+prefix,'Network: '+bigIntToIPv6(network),'First: '+bigIntToIPv6(first),'Last: '+bigIntToIPv6(last),'Count: 2^'+(128-prefix)].join('\n');
+      lastResult = {version:'ipv6', ip, prefix, network:bigIntToIPv6(network), first:bigIntToIPv6(first), last:bigIntToIPv6(last), total:total};
+      
+      // Hide subnet division for IPv6
+      document.getElementById('subnet-division-results').style.display = 'none';
+      document.getElementById('network-diagram').style.display = 'none';
+    } catch(e){ document.getElementById('error').textContent='IPv6 error: '+e; }
+  }
+});
+
+// Subnet Division Calculation
+function updateSubnetDivision(ip, prefix) {
+  const divisionStats = document.getElementById('division-stats');
+  const subnetGrid = document.getElementById('subnet-grid');
+  
+  // Calculate possible subnet divisions
+  const availableBits = 32 - prefix;
+  let divisions = [];
+  
+  for (let i = 1; i <= Math.min(availableBits, 8); i++) {
+    const newPrefix = prefix + i;
+    const subnetCount = Math.pow(2, i);
+    const hostsPerSubnet = usableHosts(newPrefix);
+    divisions.push({
+      bits: i,
+      prefix: newPrefix,
+      subnets: subnetCount,
+      hosts: hostsPerSubnet
+    });
+  }
+  
+  // Update division stats
+  divisionStats.innerHTML = `
+    <div class="info-box">
+      <strong>Available for subnetting:</strong> ${availableBits} host bits<br>
+      <strong>Current network:</strong> ${ip}/${prefix}<br>
+      <strong>Possible subnet divisions:</strong>
+    </div>
+  `;
+  
+  // Update subnet grid
+  subnetGrid.innerHTML = '';
+  divisions.forEach(div => {
+    const divElement = document.createElement('div');
+    divElement.className = 'stat';
+    divElement.innerHTML = `
+      <h4>/${div.prefix} Subnets</h4>
+      <p><strong>Subnets:</strong> ${div.subnets}</p>
+      <p><strong>Hosts/Subnet:</strong> ${div.hosts}</p>
+      <p><strong>Bits Borrowed:</strong> ${div.bits}</p>
+    `;
+    subnetGrid.appendChild(divElement);
+  });
+}
+
+// Network Diagram Update
+function updateNetworkDiagram(ip, prefix) {
+  const diagramContainer = document.getElementById('diagram-container');
+  const networkInt = ipv4ToInt(ip) & prefixToMask(prefix);
+  
+  // Create a simple network diagram based on the subnet
+  diagramContainer.innerHTML = `
+    <div class="diagram-box" style="border-color: #3498db;">
+      <div class="diagram-label">Internet Gateway</div>
+      <div class="diagram-value">${intToIpv4((networkInt + 1) >>> 0)}</div>
+    </div>
+    <div class="diagram-box" style="border-color: #2ecc71;">
+      <div class="diagram-label">Network</div>
+      <div class="diagram-value">${intToIpv4(networkInt)}/${prefix}</div>
+    </div>
+    <div class="diagram-box" style="border-color: #e74c3c;">
+      <div class="diagram-label">Usable Range</div>
+      <div class="diagram-value">${intToIpv4((networkInt + 2) >>> 0)} - ${intToIpv4((networkInt + Math.pow(2, 32-prefix) - 2) >>> 0)}</div>
+    </div>
+    <div class="diagram-box" style="border-color: #f39c12;">
+      <div class="diagram-label">Broadcast</div>
+      <div class="diagram-value">${intToIpv4((networkInt + Math.pow(2, 32-prefix) - 1) >>> 0)}</div>
+    </div>
+  `;
+}
+
+/* CIDR Planner: split network into N equal subnets (IPv4 only) */
+document.getElementById('planBtn').addEventListener('click', ()=> {
+  const net = document.getElementById('planNetwork').value.trim();
+  const prefixStr = document.getElementById('planPrefix').value.trim();
+  const count = Number(document.getElementById('planCount').value);
+  const out = document.getElementById('plannerList'); out.innerHTML='';
+  if (!net || !prefixStr || !Number.isInteger(count) || count<=0) { out.textContent='Invalid input'; return; }
+  const basePrefix = maskToPrefix(prefixStr);
+  if (basePrefix===null) { out.textContent='Invalid base prefix'; return; }
+  const netInt = ipv4ToInt(net);
+  if (netInt===null) { out.textContent='Invalid network'; return; }
+  // calculate needed bits
+  let bits = 0; while ((1<<bits) < count) bits++;
+  const newPrefix = basePrefix + bits;
+  if (newPrefix>32) { out.textContent='Cannot create that many subnets from given prefix'; return; }
+  const blockSize = Math.pow(2, 32 - newPrefix);
+  let results = [];
+  for (let i=0;i<(1<<bits);i++){
+    if (results.length>=count) break;
+    const netAddr = (netInt + i*blockSize)>>>0;
+    const first = newPrefix===32 ? netAddr : (netAddr+1)>>>0;
+    const last = (netAddr + blockSize - (newPrefix===32?0:1))>>>0;
+    const broadcast = (netAddr + blockSize -1)>>>0;
+    results.push({subnet:intToIpv4(netAddr)+'/'+newPrefix, network:intToIpv4(netAddr), first:intToIpv4(first), last:intToIpv4(last), broadcast:intToIpv4(broadcast)});
+  }
+  // render
+  const table = document.createElement('div');
+  results.forEach((r,idx)=> {
+    const d = document.createElement('div'); d.style.padding='6px'; d.style.borderBottom='1px solid #eef6ff';
+    d.innerHTML = '<strong>Subnet '+(idx+1)+'</strong><div class="small">'+r.subnet+' — Network: '+r.network+' Broadcast: '+r.broadcast+' First: '+r.first+' Last: '+r.last+'</div>';
+    table.appendChild(d);
+  });
+  out.appendChild(table);
+  window._lastPlan = results;
+});
+
+/* Export plan CSV */
+document.getElementById('exportPlanCSV').addEventListener('click', ()=> {
+  if (!window._lastPlan || !window._lastPlan.length) { alert('No plan'); return; }
+  const headers = ['Subnet','Network','First','Last','Broadcast'];
+  const rows = window._lastPlan.map(r => [r.subnet, r.network, r.first, r.last, r.broadcast]);
+  const csv = [headers.join(','), ...rows.map(r=>r.map(c=>'\"'+c+'\"').join(','))].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='cidr_plan.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* Worksheet generator */
+function randomIPv4In(prefixBaseInt, prefix) {
+  // pick a random host within the network (avoid network and broadcast)
+  const hostBits = 32 - prefix;
+  const maxHosts = Math.pow(2, hostBits);
+  const offset = Math.floor(Math.random() * Math.max(1, maxHosts-2)) + 1;
+  return intToIpv4((prefixBaseInt + offset)>>>0);
+}
+document.getElementById('genWorksheet').addEventListener('click', ()=> generateWorksheet(false));
+document.getElementById('genWorksheetWithAnswers').addEventListener('click', ()=> generateWorksheet(true));
+
+function generateWorksheet(withAnswers) {
+  const count = Number(document.getElementById('wsCount').value) || 10;
+  const type = document.getElementById('wsType').value;
+  const container = document.getElementById('worksheetArea'); container.innerHTML='';
+  const sheet = document.createElement('div');
+  sheet.style.padding='10px'; sheet.style.background='#fff'; sheet.style.borderRadius='8px';
+  let html = '<h3>Subnetting Worksheet</h3>';
+  html += '<ol>';
+  for (let i=0;i<count;i++){
+    if (type==='find_network') {
+      const prefix = 24 + Math.floor(Math.random()*6); // /24.. /29
+      const netInt = (ipv4ToInt('192.168.'+Math.floor(Math.random()*50)+'.0') & prefixToMask(prefix))>>>0;
+      const ip = randomIPv4In(netInt, prefix);
+      html += `<li>Given IP <strong>${ip}</strong> with prefix <strong>/${prefix}</strong>. Find Network, Broadcast, First Host, Last Host.</li>`;
+      if (withAnswers) {
+        // compute answers
+        const maskInt = prefixToMask(prefix);
+        const network = (ipv4ToInt(ip) & maskInt)>>>0;
+        const broadcast = (network | (~maskInt>>>0))>>>0;
+        const first = prefix===32?network:(prefix===31?network:(network+1)>>>0);
+        const last = prefix===32?network:(prefix===31?broadcast:(broadcast-1)>>>0);
+        html += `<div class="small">Answer: Network = ${intToIpv4(network)}, Broadcast = ${intToIpv4(broadcast)}, First = ${intToIpv4(first)}, Last = ${intToIpv4(last)}</div>`;
+      }
+    } else {
+      // create_subnets: give network and ask to split into N equal subnets
+      const basePrefix = 16 + Math.floor(Math.random()*4); // /16.. /19
+      const countS = 2 + Math.floor(Math.random()*6); // 2..7
+      const net = '10.'+Math.floor(Math.random()*20)+'.0.0';
+      html += `<li>Given network <strong>${net}/${basePrefix}</strong>, split into <strong>${countS}</strong> equal subnets and give first subnet's network and prefix.</li>`;
+      if (withAnswers) {
+        // compute answer for first subnet
+        let bits=0; while ((1<<bits) < countS) bits++;
+        const newPrefix = basePrefix + bits;
+        const networkInt = ipv4ToInt(net) >>> 0;
+        html += `<div class="small">Answer (first subnet): ${intToIpv4(networkInt)}/${newPrefix}</div>`;
+      }
+    }
+  }
+  html += '</ol>';
+  sheet.innerHTML = html;
+  container.appendChild(sheet);
+  // offer print button
+  const pbtn = document.createElement('button'); pbtn.className='primary'; pbtn.textContent='Print Worksheet';
+  pbtn.addEventListener('click', ()=> window.print());
+  container.appendChild(pbtn);
+}
+
+/* Copy, CSV, PDF for results (simple) */
+document.getElementById('copyBtn').addEventListener('click', ()=> {
+  if (!lastResult) { alert('Run calc first'); return; }
+  navigator.clipboard.writeText(JSON.stringify(lastResult, null, 2)).then(()=> alert('Copied'));
+});
+document.getElementById('csvBtn').addEventListener('click', ()=> {
+  if (!lastResult) { alert('Run calc first'); return; }
+  const headers = Object.keys(lastResult);
+  const row = headers.map(h => '\"'+String(lastResult[h])+'\"').join(',');
+  const csv = [headers.join(','), row].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='subnet_result.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+document.getElementById('pdfBtn').addEventListener('click', async ()=> {
+  if (!lastResult) { alert('Run calc first'); return; }
+  // try jsPDF if available
+  try {
+    const { jsPDF } = window.jspdf || {};
+    if (jsPDF) {
+      const doc = new jsPDF();
+      doc.text('Subnet Calculation Report', 14, 20);
+      let y=30;
+      for (const k of Object.keys(lastResult)) { doc.text(k+': '+String(lastResult[k]), 14, y); y+=8; if (y>270) { doc.addPage(); y=20; } }
+      doc.save('subnet_report.pdf');
+      return;
+    }
+  } catch(e){}
+  // fallback to print
+  alert('jsPDF not available — will open print dialog as fallback.');
+  window.print();
+});
+
+/* Tutorial modal wiring */
+document.getElementById('openTutorial').addEventListener('click', ()=> document.getElementById('tutorialModal').style.display='flex');
+document.getElementById('closeTutorial').addEventListener('click', ()=> document.getElementById('tutorialModal').style.display='none');
+
+/* Download current page HTML */
+document.getElementById('downloadZip').addEventListener('click', ()=> {
+  const html = '<!doctype html>\n' + document.documentElement.outerHTML;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='advanced_subnet_tool.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* Minimal IPv6 helpers (from previous) */
+function expandIPv6(addr) {
+  if (addr.indexOf('::') !== addr.lastIndexOf('::')) return null;
+  let parts = addr.split('::');
+  let left = parts[0] ? parts[0].split(':') : [];
+  let right = parts[1] ? parts[1].split(':') : [];
+  if (right.length && right[right.length-1].includes('.')) {
+    const v4 = right.pop(); const v4int = ipv4ToInt(v4); if (v4int===null) return null;
+    const hi = ((v4int>>>16)&0xFFFF).toString(16); const lo = (v4int&0xFFFF).toString(16);
+    right.push(hi); right.push(lo);
+  }
+  const missing = 8 - (left.length + right.length);
+  if (missing < 0) return null;
+  const mid = new Array(missing).fill('0');
+  const full = left.concat(mid, right).map(h => h==='' ? '0' : h);
+  if (full.length !== 8) return null;
+  for (let i=0;i<8;i++){ const v = parseInt(full[i],16); if (Number.isNaN(v)||v<0||v>0xFFFF) return null; full[i]=v.toString(16).padStart(4,'0'); }
+  return full;
+}
+function ipv6ToBigInt(addr) {
+  const hextets = expandIPv6(addr); if (!hextets) return null;
+  let n = 0n;
+  for (let i=0;i<8;i++){ n = (n << 16n) | BigInt(parseInt(hextets[i],16)); }
+  return n;
+}
+function bigIntToIPv6(n) {
+  if (n < 0n || n > ((1n<<128n)-1n)) return null;
+  const parts = [];
+  for (let i=0;i<8;i++){ const v = Number((n >> (BigInt(16*(7-i)))) & 0xFFFFn); parts.push(v.toString(16).padStart(4,'0')); }
+  // compress zeros
+  let zeroRuns=[]; let runStart=-1, runLen=0;
+  for (let i=0;i<8;i++){ if (parts[i]==='0000'){ if (runStart===-1) runStart=i; runLen++; } else { if (runStart!==-1){ zeroRuns.push([runStart,runLen]); runStart=-1; runLen=0; } } }
+  if (runStart!==-1) zeroRuns.push([runStart,runLen]);
+  let best=[-1,0]; for (const r of zeroRuns) if (r[1]>best[1]) best=r;
+  if (best[1]>1){ const [s,l]=best; parts.splice(s,l,''); if (s===0) parts.unshift(''); if (s+l===8) parts.push(''); }
+  return parts.join(':').replace(/(^:)|(:$)/,'::').replace(/:::+/,'::');
+}
+function parseIPv6Prefix(p){ if (!p.startsWith('/')) return null; const v=Number(p.slice(1)); if (!Number.isInteger(v)||v<0||v>128) return null; return v; }
+function prefixToMaskBigInt(prefix){ if (prefix===0) return 0n; return ((~0n) << BigInt(128-prefix)) & ((1n<<128n)-1n); }
+
+/* init */
+document.getElementById('ipVersion').addEventListener('change', ()=> {
+  const v = document.getElementById('ipVersion').value;
+  document.getElementById('ipInput').value = v==='ipv4' ? '192.168.10.5' : '2001:db8::1';
+  document.getElementById('maskInput').value = v==='ipv4' ? '/24' : '/64';
+});
+</script>
+</body>
+</html>
